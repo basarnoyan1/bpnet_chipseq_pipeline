@@ -1,0 +1,11 @@
+samples_tsv: "samples.tsv"
+threads: 8
+bowtie2_index: "hg19"
+macs3_genome_size: "hs"
+macs3_qvalue: 0.01
+fasta_file: "/kuacc/users/bnoyan21/hpc_run/LackLabClusterFolder/hg19.fa"
+chrom_sizes: "/kuacc/users/bnoyan21/hpc_run/fastq_files/hg19_filtered.chrom.sizes"
+apptainer_sif: "/kuacc/users/bnoyan21/hpc_run/bpnet_container.sif"
+bpnet_config: "config.gin" 
+comet_project: "basarnoyan1/bpnet-ar-chipseq"
+

@@ -1,0 +1,107 @@
+# rules/bpnet.smk
+# This file contains rules for training a BPNet model, generating contribution files, and running Modisco analysis.
+
+rule generate_dataspec:
+    output:
+        "dataspec/{sample}_dataspec.yml"
+    run:
+        import yaml
+        sample = wildcards.sample
+        dataspec = {
+            'fasta_file': FASTA_FILE,
+            'task_specs': {
+                "AR": {
+                    'tracks': [
+                        f"bigwig/{sample}_plus.bw",
+                        f"bigwig/{sample}_minus.bw"
+                    ],
+                    'peaks': f"peaks/{sample}_summits.bed"
+                }
+            },
+            'bias_specs': {
+                "input": {
+                    'tracks': [
+                        f"bigwig/{SAMPLE_TO_INPUT[sample]}_plus.bw",
+                        f"bigwig/{SAMPLE_TO_INPUT[sample]}_minus.bw"
+                    ],
+                    'tasks': ["AR"]
+                }
+            }
+        }
+        with open(output[0], 'w') as f:
+            yaml.dump(dataspec, f, default_flow_style=False)
+
+rule bpnet_train:
+    input:
+        dataspec="dataspec/{sample}_dataspec.yml",
+        config_gin=BPNET_CONFIG_GIN
+    output:
+        touch("bpnet_training/{sample}_complete")
+    log: "logs/bpnet_training/{sample}.log"
+    params:
+        run_id=lambda wc: f"bpnet_{wc.sample}",
+        container=BPNET_CONTAINER,
+        comet_project=COMET_PROJECT
+    threads: 1
+    shell:
+        """
+        apptainer exec --nv {params.container} \
+            bpnet train --config={input.config_gin} --run-id={params.run_id} \
+            --memfrac-gpu=1 --cometml-project={params.comet_project} --overwrite \
+            {input.dataspec} bpnet_training/{params.run_id} > {log}
+        """
+
+rule bpnet_contrib:
+    input:
+        "bpnet_training/{sample}_complete"
+    output:
+        contrib_file="contrib/{sample}.h5",
+        contrib_null_file="contrib/{sample}_null.h5"
+    log: "logs/bpnet_contrib/{sample}.log"
+    params:
+        container=BPNET_CONTAINER,
+        model_dir=lambda wc: f"bpnet_training/bpnet_{wc.sample}/bpnet_{wc.sample}",
+        memfrac_gpu=1
+    shell:
+        """
+        apptainer exec --nv {params.container} \
+            bpnet contrib {params.model_dir} --method=deeplift --memfrac-gpu={params.memfrac_gpu} {output.contrib_file} > {log}
+
+        apptainer exec --nv {params.container} \
+            bpnet contrib {params.model_dir} --method=deeplift --memfrac-gpu={params.memfrac_gpu} --shuffle-seq --max-regions 5000 {output.contrib_null_file} >> {log}
+        """
+
+rule bpnet_modisco_run:
+    input:
+        contrib_file="contrib/{sample}.h5",
+        contrib_null_file="contrib/{sample}_null.h5"
+    output:
+        modisco_done="modisco/{sample}/modisco_done"
+    log: "logs/modisco/{sample}.log"
+    params:
+        container=BPNET_CONTAINER,
+        memfrac_gpu=1
+    shell:
+        """
+        apptainer exec --nv {params.container} \
+            bpnet modisco-run {input.contrib_file} --null-contrib-file={input.contrib_null_file} \
+            --contrib-wildcard=AR/counts/pre-act --premade=modisco-50k --only-task-regions modisco/{{wildcards.sample}}/ \
+            --overwrite --memfrac-gpu={params.memfrac_gpu} > {log}
+        touch {output.modisco_done}
+        """
+
+rule bpnet_chip_nexus_analysis:
+    input:
+        modisco_done="modisco/{sample}/modisco_done"
+    output:
+        touch("modisco/{sample}/chip_nexus_done")
+    params:
+        container=BPNET_CONTAINER,
+        memfrac_gpu=1
+    shell:
+        """
+        apptainer exec --nv {params.container} \
+            bpnet chip-nexus-analysis modisco/{{wildcards.sample}}/
+
+        touch {output}
+        """
