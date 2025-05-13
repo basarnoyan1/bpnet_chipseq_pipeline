@@ -7,6 +7,7 @@ rule generate_dataspec:
     run:
         import yaml
         sample = wildcards.sample
+        input_sample = SAMPLE_TO_INPUT[sample]
         dataspec = {
             'fasta_file': FASTA_FILE,
             'task_specs': {
@@ -17,17 +18,18 @@ rule generate_dataspec:
                     ],
                     'peaks': f"peaks/{sample}_summits.bed"
                 }
-            },
-            'bias_specs': {
+            }
+        }
+        if input_sample != "NA":
+            dataspec['bias_specs'] = {
                 "input": {
                     'tracks': [
-                        f"bigwig/{SAMPLE_TO_INPUT[sample]}_plus.bw",
-                        f"bigwig/{SAMPLE_TO_INPUT[sample]}_minus.bw"
+                        f"bigwig/{input_sample}_plus.bw",
+                        f"bigwig/{input_sample}_minus.bw"
                     ],
                     'tasks': ["AR"]
                 }
             }
-        }
         with open(output[0], 'w') as f:
             yaml.dump(dataspec, f, default_flow_style=False)
 

@@ -2,10 +2,20 @@
 #SBATCH --job-name=smk-{rule}
 #SBATCH --output=logs/{rule}.{wildcards}.%j.out
 #SBATCH --error=logs/{rule}.{wildcards}.%j.err
-#SBATCH --time={resources.time}
 #SBATCH --cpus-per-task={threads}
-#SBATCH --mem={resources.mem_mb}
-{resources.gpus and f"#SBATCH --gpus={resources.gpus}"}
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --partition=long
+#SBATCH --cpus-per-task=16
+#SBATCH --gpus-per-node=1
+#SBATCH --mem=256G
+#SBATCH --qos=users
+#SBATCH --account=users
+#SBATCH --time=10:00:00
+#SBATCH --output=test-%j.out
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=bnoyan21@ku.edu.tr
+
 
 #Basar's custom cluster settings
 module load anaconda/2024.02
