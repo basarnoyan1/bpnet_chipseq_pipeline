@@ -1,0 +1,181 @@
+import bpnet
+import bpnet.configurables as bpnet2
+import bpnet.datasets as bpnet3
+import bpnet.heads as bpnet4
+import bpnet.layers as bpnet5
+import bpnet.losses as bpnet6
+import bpnet.metrics as bpnet7
+import bpnet.models as bpnet8
+import bpnet.seqmodel as bpnet9
+import bpnet.trainers as bpnet10
+
+# Macros:
+# ==============================================================================
+augment_interval = True
+batchnorm = False
+dataspec = '/kuacc/users/bnoyan21/hpc_run/Tasks/ChIPseq_LNCaP/AR/Rep1n2/bpnet_original/dataspec.yml'
+exclude_chr = ['chrX', 'chrY']
+filters = 64
+lambda = 10
+lr = 0.004
+n_bias_tracks = 0
+n_dil_layers = 9
+seq_width = 1000
+tasks = ['AR']
+tconv_kernel_size = 50 # 50 yap
+test_chr = ["chr2", "chr3", "chr4"]
+tracks_per_task = 2
+use_bias = False
+valid_chr = ["chr1", "chr8", "chr9"]
+
+# Parameters for Adam:
+# ==============================================================================
+Adam.amsgrad = False
+Adam.beta_1 = 0.9
+Adam.beta_2 = 0.999
+Adam.learning_rate = %lr
+Adam.lr = %lr
+
+# Parameters for bpnet_data:
+# ==============================================================================
+bpnet_data.augment_interval = %augment_interval
+bpnet_data.dataspec = %dataspec
+bpnet_data.exclude_chr = %exclude_chr
+bpnet_data.include_metadata = False
+bpnet_data.interval_augmentation_shift = 200
+bpnet_data.intervals_file = None
+bpnet_data.intervals_format = 'bed'
+bpnet_data.peak_width = %seq_width
+bpnet_data.seq_width = %seq_width
+bpnet_data.shuffle = True
+bpnet_data.tasks = %tasks
+bpnet_data.test_chr = %test_chr
+bpnet_data.track_transform = None
+bpnet_data.valid_chr = %valid_chr
+
+# Parameters for ClassificationMetrics:
+# ==============================================================================
+# None.
+
+# Parameters for DeConv1D:
+# ==============================================================================
+DeConv1D.batchnorm = %batchnorm
+DeConv1D.filters = %filters
+DeConv1D.n_hidden = 0
+DeConv1D.n_tasks = %tracks_per_task
+DeConv1D.padding = 'same'
+DeConv1D.tconv_kernel_size = %tconv_kernel_size
+
+# Parameters for DilatedConv1D:
+# ==============================================================================
+DilatedConv1D.add_pointwise = False
+DilatedConv1D.batchnorm = %batchnorm
+DilatedConv1D.conv1_kernel_size = 25
+DilatedConv1D.filters = %filters
+DilatedConv1D.n_dil_layers = %n_dil_layers
+DilatedConv1D.padding = 'same'
+DilatedConv1D.skip_type = 'residual'
+
+# Parameters for GlobalAvgPoolFCN:
+# ==============================================================================
+GlobalAvgPoolFCN.batchnorm = %batchnorm
+GlobalAvgPoolFCN.dropout = 0
+GlobalAvgPoolFCN.dropout_hidden = 0
+GlobalAvgPoolFCN.hidden = None
+GlobalAvgPoolFCN.n_splines = 0
+GlobalAvgPoolFCN.n_tasks = %tracks_per_task
+
+# Parameters for IntervalAugmentor:
+# ==============================================================================
+# None.
+
+# Parameters for MetricsOrderedDict:
+# ==============================================================================
+# None.
+
+# Parameters for MovingAverages:
+# ==============================================================================
+MovingAverages.window_sizes = [1, 50]
+
+# Parameters for multinomial_nll:
+# ==============================================================================
+# None.
+
+# Parameters for PeakPredictionProfileMetric:
+# ==============================================================================
+PeakPredictionProfileMetric.binsizes = [1, 2, 5, 10]
+PeakPredictionProfileMetric.neg_max_threshold = 0.005
+PeakPredictionProfileMetric.pos_min_threshold = 0.015
+PeakPredictionProfileMetric.required_min_pos_counts = 2.5
+
+# Parameters for ProfileHead:
+# ==============================================================================
+ProfileHead.activation = None
+ProfileHead.bias_input = 'bias/{task}/profile'
+ProfileHead.bias_net = @MovingAverages()
+ProfileHead.bias_shape = (None, %n_bias_tracks)
+ProfileHead.loss = @multinomial_nll
+ProfileHead.loss_weight = 1
+ProfileHead.metric = @PeakPredictionProfileMetric()
+ProfileHead.net = @DeConv1D()
+ProfileHead.postproc_fn = @softmax
+ProfileHead.target_name = '{task}/profile'
+ProfileHead.use_bias = %use_bias
+
+# Parameters for RegressionMetrics:
+# ==============================================================================
+# None.
+
+# Parameters for report_template:
+# ==============================================================================
+report_template.name = 'evaluate.ipynb'
+report_template.raise_error = True
+
+# Parameters for ScalarHead:
+# ==============================================================================
+ScalarHead.activation = None
+ScalarHead.bias_input = 'bias/{task}/counts'
+ScalarHead.bias_net = None
+ScalarHead.bias_shape = (%n_bias_tracks,)
+ScalarHead.loss = 'mse'
+ScalarHead.loss_weight = %lambda
+ScalarHead.metric = @RegressionMetrics()
+ScalarHead.net = @GlobalAvgPoolFCN()
+ScalarHead.postproc_fn = None
+ScalarHead.target_name = '{task}/counts'
+ScalarHead.use_bias = %use_bias
+
+# Parameters for SeqModel:
+# ==============================================================================
+SeqModel.body = @DilatedConv1D()
+SeqModel.heads = [@ProfileHead(), @ScalarHead()]
+SeqModel.input_name = 'seq'
+SeqModel.input_shape = None
+SeqModel.optimizer = @keras.optimizers.Adam()
+SeqModel.seqlen = %seq_width
+SeqModel.tasks = %tasks
+
+# Parameters for StrandedProfile:
+# ==============================================================================
+StrandedProfile.excl_chromosomes = None
+StrandedProfile.include_classes = False
+
+# Parameters for train:
+# ==============================================================================
+train.batch_size = 128
+train.data = @bpnet_data()
+train.early_stop_patience = 30
+train.epochs = 30
+train.eval_metric = None
+train.eval_report = @report_template()
+train.eval_skip = []
+train.eval_train = False
+train.model = @SeqModel()
+train.seed = None
+train.stratified_sampler_p = None
+train.tensorboard = True
+train.train_batch_sampler = None
+train.train_epoch_frac = 1.0
+train.train_samples_per_epoch = None
+train.valid_epoch_frac = 1.0
+train.validation_samples = None
