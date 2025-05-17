@@ -1,14 +1,18 @@
 cluster: "sbatch --parsable"
-cluster-status: "slurm-status.py {jobid}"
+cluster-status: "slurm/slurm-status.py {jobid}"
 jobscript: "slurm/sbatch-jobscript.sh"
 
-jobs: 100
+jobs: 5
 latency-wait: 60
 use-conda: true
 rerun-incomplete: true
 keep-going: true
 restart-times: 3
 
-
+default-resources:
+  - mem_mb=262144
+  - time="10:00:00"
+  - cpus=16
+  - gpus=1
 
 

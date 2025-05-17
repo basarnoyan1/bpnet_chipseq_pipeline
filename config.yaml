@@ -1,5 +1,5 @@
 samples_tsv: "samples.tsv"
-threads: 8
+threads: 4
 bowtie2_index: "hg19"
 macs3_genome_size: "hs"
 macs3_qvalue: 0.01

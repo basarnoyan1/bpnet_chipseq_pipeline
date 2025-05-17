@@ -12,8 +12,12 @@ SAMPLES = samples_df["Sample"].tolist()
 INPUTS = samples_df["Input"].tolist()
 SAMPLE_TO_INPUT = dict(zip(SAMPLES, INPUTS))
 
-# Use only unique GSM IDs, skip "NA"
-ALL_SRAS = sorted(set(SAMPLES + INPUTS) - {"NA"})
+ALL_GSMS = sorted({
+    s.strip()                        # trim whitespace
+    for s in SAMPLES + INPUTS
+    if s and s.strip().upper() != "NA"
+})
+
 
 # Load config variables
 BOWTIE2_INDEX = config["bowtie2_index"]

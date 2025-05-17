@@ -36,7 +36,10 @@ rule generate_dataspec:
 rule bpnet_train:
     input:
         dataspec="dataspec/{sample}_dataspec.yml",
-        config_gin=BPNET_CONFIG_GIN
+        config_gin=BPNET_CONFIG_GIN,
+        plus_bw="bigwig/{sample}_plus.bw",
+        minus_bw="bigwig/{sample}_minus.bw",
+        peaks="peaks/{sample}_summits.bed"
     output:
         touch("bpnet_training/{sample}_complete")
     log: "logs/bpnet_training/{sample}.log"
