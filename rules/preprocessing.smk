@@ -92,7 +92,7 @@ rule align_and_merge:
     input:
         fastq_done="fastq/{sample}/fastq.done"
     output:
-        merged_bam="bam/{sample}_merged.bam"
+        merged_bam=temp("bam/{sample}_merged.bam")
     params:
         index=BOWTIE2_INDEX
     threads: THREADS
@@ -150,19 +150,26 @@ rule index_bam:
 
 
 rule bam2bigwig:
-    input:  "bam/{sample}_filtered.bam"
+    input:
+        "bam/{sample}_filtered.bam"
     output:
         plus_bw="bigwig/{sample}_plus.bw",
         minus_bw="bigwig/{sample}_minus.bw"
-    params: sizes=CHROM_SIZES
+    params:
+        sizes=CHROM_SIZES
     threads: THREADS
     shell:
-        """
+        r"""
         bedtools genomecov -5 -bg -strand + -ibam {input} \
-          | sort -k1,1 -k2,2n > tmp_plus.bedGraph
-        bedGraphToBigWig tmp_plus.bedGraph {params.sizes} {output.plus_bw}
+          | sort -k1,1 -k2,2n > tmp_{wildcards.sample}_plus.bedGraph
+        bedGraphToBigWig \
+          tmp_{wildcards.sample}_plus.bedGraph {params.sizes} {output.plus_bw}
+
         bedtools genomecov -5 -bg -strand - -ibam {input} \
-          | sort -k1,1 -k2,2n > tmp_minus.bedGraph
-        bedGraphToBigWig tmp_minus.bedGraph {params.sizes} {output.minus_bw}
-        rm tmp_*.bedGraph
+          | sort -k1,1 -k2,2n > tmp_{wildcards.sample}_minus.bedGraph
+        bedGraphToBigWig \
+          tmp_{wildcards.sample}_minus.bedGraph {params.sizes} {output.minus_bw}
+
+        rm tmp_{wildcards.sample}_*.bedGraph
         """
+

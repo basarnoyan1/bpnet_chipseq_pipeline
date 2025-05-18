@@ -1,5 +1,4 @@
 cluster: "sbatch --parsable"
-cluster-status: "slurm/slurm-status.py {jobid}"
 jobscript: "slurm/sbatch-jobscript.sh"
 
 jobs: 5
@@ -11,7 +10,7 @@ restart-times: 3
 
 default-resources:
   - mem_mb=262144
-  - time="10:00:00"
+  - time="3:30:00"
   - cpus=16
   - gpus=1
 

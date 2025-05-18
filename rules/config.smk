@@ -7,15 +7,20 @@ import pandas as pd
 
 # Read TSV, skip comment lines, and fill missing inputs with "NA"
 samples_df = pd.read_csv(config["samples_tsv"], sep="\t", comment="#", skip_blank_lines=True).fillna("NA")
+samples_df = samples_df.loc[
+    samples_df["Sample"].str.strip().str.upper() != "NA"
+]
 
 SAMPLES = samples_df["Sample"].tolist()
 INPUTS = samples_df["Input"].tolist()
 SAMPLE_TO_INPUT = dict(zip(SAMPLES, INPUTS))
 
 ALL_GSMS = sorted({
-    s.strip()                        # trim whitespace
-    for s in SAMPLES + INPUTS
-    if s and s.strip().upper() != "NA"
+    entry.strip()
+    for entry in SAMPLES + INPUTS
+    if isinstance(entry, str)
+       and entry.strip()
+       and entry.strip().upper() != "NA"
 })
 
 

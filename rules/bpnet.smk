@@ -75,25 +75,34 @@ rule bpnet_contrib:
         apptainer exec --nv {params.container} \
             bpnet contrib {params.model_dir} --method=deeplift --memfrac-gpu={params.memfrac_gpu} --shuffle-seq --max-regions 5000 {output.contrib_null_file} >> {log}
         """
-
 rule bpnet_modisco_run:
     input:
-        contrib_file="contrib/{sample}.h5",
-        contrib_null_file="contrib/{sample}_null.h5"
+        contrib="contrib/{sample}.h5",
+        contrib_null="contrib/{sample}_null.h5"
     output:
-        modisco_done="modisco/{sample}/modisco_done"
-    log: "logs/modisco/{sample}.log"
+        touch("modisco/{sample}/modisco_done")
+    log:
+        "logs/modisco/{sample}.log"
     params:
-        container=BPNET_CONTAINER,
-        memfrac_gpu=1
+        container = BPNET_CONTAINER,
+        modisco_dir = lambda wc: f"modisco/{wc.sample}/",
+        gpu_frac    = 1
+    threads: 1
     shell:
-        """
+        r"""
         apptainer exec --nv {params.container} \
-            bpnet modisco-run {input.contrib_file} --null-contrib-file={input.contrib_null_file} \
-            --contrib-wildcard=AR/counts/pre-act --premade=modisco-50k --only-task-regions modisco/{{wildcards.sample}}/ \
-            --overwrite --memfrac-gpu={params.memfrac_gpu} > {log}
-        touch {output.modisco_done}
+            bpnet modisco-run {input.contrib} \
+              --null-contrib-file={input.contrib_null} \
+              --contrib-wildcard=AR/counts/pre-act \
+              --premade=modisco-50k \
+              --only-task-regions {params.modisco_dir} \
+              --overwrite \
+              --memfrac-gpu={params.gpu_frac} \
+            > {log}
+
+        touch {output}
         """
+
 
 rule bpnet_chip_nexus_analysis:
     input:

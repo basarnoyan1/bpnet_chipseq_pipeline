@@ -5,12 +5,12 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --partition=long
+#SBATCH --partition=mid
 #SBATCH --gpus-per-node=1
 #SBATCH --mem=256G
 #SBATCH --qos=users
 #SBATCH --account=users
-#SBATCH --time=10:00:00
+#SBATCH --time=4:30:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=bnoyan21@ku.edu.tr
 
