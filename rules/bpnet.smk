@@ -91,7 +91,7 @@ rule bpnet_modisco_run:
     shell:
         r"""
         apptainer exec --nv {params.container} \
-            env PATH="/opt/micromamba/envs/bpnet/bin:$PATH" bpnet modisco-run {input.contrib} \
+            env PATH="/opt/micromamba/envs/bpnet/bin:/bin:/usr/bin:$PATH" bpnet modisco-run {input.contrib} \
               --null-contrib-file={input.contrib_null} \
               --contrib-wildcard=AR/counts/pre-act \
               --premade=modisco-50k \
