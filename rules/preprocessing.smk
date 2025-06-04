@@ -90,7 +90,8 @@ rule align_and_merge:
     Align all FASTQs for a sample (in fastq/{sample}/) and merge into bam/{sample}_merged.bam.
     """
     input:
-        fastq_done="fastq/{sample}/fastq.done"
+        fastq_done="fastq/{sample}/fastq.done",
+        index_file=f"{BOWTIE2_INDEX}.1.bt2"
     output:
         merged_bam=temp("bam/{sample}_merged.bam")
     params:

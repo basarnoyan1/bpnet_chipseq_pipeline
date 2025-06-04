@@ -16,4 +16,4 @@ rule all:
         expand("bpnet_training/{sample}_complete", sample=SAMPLES),
         expand("contrib/{sample}.h5", sample=SAMPLES),
         expand("contrib/{sample}_null.h5", sample=SAMPLES),
-        expand("modisco/{sample}/chip_nexus_done", sample=SAMPLES)
+        expand("modisco/{sample}/modisco_done", sample=SAMPLES),
